@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="与悦书">
+<meta name="theme-color" content="#FFFFFF">
+<title>与悦书</title>
+<style>
+:root{
+  --red:#FF3B30;--green:#34C759;--yellow:#FFD60A;--pink:#FF2D55;--orange:#FF9500;
+  --label:#1C1C1E;--gray:#8E8E93;--gray2:#C7C7CC;--group:#F2F2F7;--sep:#E5E5EA;--blue:#007AFF;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+html,body{height:100%;margin:0}
+body{background:#EFEFF4;font-family:var(--font);color:var(--label);overflow:hidden;font-size:18px}
+body.noscroll{overflow:hidden}
+#app{position:relative;height:100vh;height:100dvh;max-width:480px;margin:0 auto;background:#fff;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 0 60px rgba(0,0,0,.08)}
+/* nav */
+.nav{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:12px 18px 0}
+.title{background:none;border:0;padding:0 4px 0 0;font-family:inherit;font-size:clamp(22px,7.4vw,30px);font-weight:700;letter-spacing:-.9px;color:var(--label);line-height:1.15;text-align:left;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title.week{font-size:clamp(16px,5vw,23px);letter-spacing:-.4px}
+.nav-btns{display:flex;align-items:center;gap:8px;padding-bottom:5px;flex:0 0 auto}
+.icon-btn{width:32px;height:32px;border-radius:50%;border:0;background:var(--group);display:grid;place-items:center;color:var(--blue);padding:0;transition:transform .18s,background .18s}
+.icon-btn:active{transform:scale(.92);background:#E5E5EA}
+.icon-btn svg{width:17px;height:17px}
+.txt-pill{border:0;background:var(--group);color:var(--blue);font-family:inherit;font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:100px;transition:transform .18s}
+.txt-pill:active{transform:scale(.94)}
+/* segmented */
+.seg{position:relative;display:grid;grid-template-columns:repeat(4,1fr);margin:9px 18px 2px;padding:2px;background:#EFEFF4;border-radius:10px}
+.seg .thumb{position:absolute;top:2px;bottom:2px;background:#fff;border-radius:8px;box-shadow:0 3px 8px rgba(0,0,0,.10);transition:left .34s cubic-bezier(.32,.72,0,1);pointer-events:none;z-index:0}
+.seg button{position:relative;z-index:1;border:0;background:none;font-family:inherit;font-size:15px;font-weight:500;color:var(--label);padding:8px 0;border-radius:8px;transition:color .22s,font-weight .22s}
+.seg button.on{font-weight:600}
+/* host */
+#viewHost{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:pan-y}
+.page{position:absolute;inset:0;display:flex;flex-direction:column}
+.page.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:26px}
+@keyframes inR{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
+@keyframes inL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)}}
+/* month */
+.mhead{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:8px 8px 2px;font-size:12.5px;color:var(--gray);text-align:center;font-weight:600}
+.grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 8px 8px;min-height:0}
+.day{position:relative;border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit;color:var(--label);min-height:0;min-width:0}
+.numwrap{position:relative;width:36px;height:36px;display:grid;place-items:center;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.day:active .numwrap{transform:scale(.88)}
+.ring{position:absolute;width:36px;height:36px;border-radius:50%;border:2px solid transparent;transition:border-color .22s}
+.disc{position:absolute;width:36px;height:36px;border-radius:50%;background:var(--c,#000);transform:scale(.2);opacity:0;transition:transform .34s cubic-bezier(.34,1.56,.64,1),opacity .2s}
+.day.marked .disc{transform:scale(1);opacity:1}
+.dnum{position:relative;font-size:19px;font-weight:500;letter-spacing:-.5px;transition:color .2s;line-height:1}
+.day.other .dnum{color:var(--gray2)}
+.day.hol .dnum{color:var(--red)}
+.day.today .ring{border-color:var(--red)}
+.day.today .dnum{color:var(--red);font-weight:700}
+.day.marked .dnum{color:#fff;font-weight:600}
+.day.today.marked .ring{border-color:rgba(255,255,255,.85)}
+.day.today.marked .dnum{color:#fff}
+.day.yellow .dnum,.day.today.yellow .dnum{color:#1C1C1E}
+.tag{font-size:10.5px;color:var(--gray);height:14px;line-height:14px;margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;max-width:100%}
+.day.hol .tag{color:var(--red)}
+.dots{display:flex;gap:3px;height:6px;align-items:center;justify-content:center;margin-top:2px}
+.dots i{width:4px;height:4px;border-radius:50%;display:block}
+.d-memo{background:var(--gray2)}
+.d-period{background:var(--pink)}
+.d-pred{width:6px;height:6px;background:transparent;border:1.5px solid var(--pink);box-sizing:border-box}
+.chk{position:absolute;top:-4px;right:-4px;width:16px;height:16px;color:var(--green);animation:pop .38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.day.done .numwrap{background:rgba(52,199,89,.10);border-radius:10px}
+/* week */
+.wsec{padding:2px 18px 0}
+.wrow{display:flex;gap:14px;width:100%;text-align:left;border:0;background:none;font-family:inherit;padding:15px 0;border-bottom:1px solid var(--sep);align-items:flex-start;transition:background .2s}
+.wrow:active{background:var(--group)}
+.wd{width:46px;flex:0 0 46px;text-align:center}
+.wname{font-size:12px;color:var(--gray);font-weight:600}
+.wnum{font-size:26px;font-weight:600;letter-spacing:-.8px;margin-top:3px;line-height:1}
+.wnum.today{color:var(--red)}
+.wbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:2px}
+.chip-sm{display:inline-flex;align-items:center;font-size:13px;font-weight:600;padding:3px 9px;border-radius:100px;background:var(--group);align-self:flex-start;color:var(--label)}
+.wev{font-size:15.5px;color:var(--label);display:flex;gap:7px;align-items:center;min-width:0}
+.wev i{width:6px;height:6px;border-radius:50%;background:var(--gray2);flex:0 0 auto}
+.wev span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wempty{font-size:14px;color:var(--gray2)}
+/* day */
+.dd{padding:0 18px 12px}
+.sheet-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
+.dayhead{display:flex;align-items:center;gap:16px;padding:12px 0 16px;border-bottom:1px solid var(--sep)}
+.bigdate{font-size:54px;font-weight:700;letter-spacing:-2px;line-height:1;color:var(--label);min-width:66px}
+.dayhead .dmeta .w{font-size:17px;font-weight:600}
+.dmeta .y{font-size:14px;color:var(--gray);margin-top:3px}
+.dmeta .hol{font-size:13px;color:var(--red);margin-top:5px;font-weight:600}
+.sect{margin-top:22px}
+.sect-t{font-size:13px;font-weight:600;color:var(--gray);letter-spacing:.5px;margin-bottom:10px;padding-left:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border:0;font-family:inherit;font-size:15px;font-weight:500;padding:9px 14px;border-radius:100px;background:var(--group);color:var(--label);transition:transform .2s,background .22s,color .22s}
+.chip:active{transform:scale(.94)}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--c);transition:background .22s}
+.chip.on{background:var(--c);color:#fff}
+.chip.on i{background:#fff;opacity:.85}
+.chip.yellow.on{color:#1C1C1E}
+.chip.yellow.on i{background:rgba(0,0,0,.35)}
+.chip.dis{opacity:.32}
+.card{background:var(--group);border-radius:14px;padding:14px 16px;border:0;font-family:inherit;text-align:left;width:100%;display:block;transition:transform .18s}
+.card:active{transform:scale(.985)}
+.mt{font-size:16.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:hidden}
+.thumbs{display:flex;gap:6px;margin-top:10px;overflow:hidden}
+.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:9px}
+.mmeta{font-size:12px;color:var(--gray);margin-top:9px}
+.empty-card{width:100%;border:0;background:var(--group);border-radius:14px;padding:17px 16px;font-family:inherit;font-size:15.5px;color:var(--blue);font-weight:600;text-align:left}
+.pk{display:flex;justify-content:space-between;font-size:15.5px;padding:5px 0;color:var(--gray)}
+.pk b{color:var(--label);font-weight:600}
+.ptag{margin-top:9px;font-size:14px;color:var(--pink);font-weight:600;background:rgba(255,45,85,.09);padding:7px 10px;border-radius:9px;display:inline-block}
+.pbtns{display:flex;gap:8px;margin-top:13px}
+.pbtns button{flex:1;border:0;border-radius:10px;background:#fff;font-family:inherit;font-size:14px;font-weight:600;color:var(--blue);padding:11px 0;transition:transform .18s}
+.pbtns button:active{transform:scale(.97)}
+/* year */
+.yearWrap{display:grid;grid-template-columns:repeat(2,1fr);gap:18px 14px;padding:10px 18px 30px}
+.mini-h{font-size:15px;font-weight:600;margin-bottom:7px;color:var(--label)}
+.mini-h b{color:var(--red);font-weight:600}
+.mini-w{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:9px;color:var(--gray);text-align:center;margin-bottom:3px}
+.mini-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px}
+.mc{position:relative;border:0;background:none;font-family:inherit;font-size:10.5px;color:var(--label);padding:3px 0;line-height:1.35;border-radius:50%}
+.mc.other{color:#D1D1D6}
+.mc.today{color:#fff;background:var(--red);font-weight:600}
+.mc.mark{background:var(--c);color:#fff;font-weight:600}
+.mc.done{color:var(--green);font-weight:700}
+.mc.hol{color:var(--red)}
+/* sheet */
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .38s ease}
+.sheet{position:relative;width:100%;max-width:480px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;max-height:92vh;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .44s cubic-bezier(.32,.72,0,1);box-shadow:0 -12px 44px rgba(0,0,0,.16);padding-bottom:env(safe-area-inset-bottom)}
+.sheet-wrap.in .sheet{transform:translateY(0)}
+.sheet-wrap.in .sheet-backdrop{background:rgba(0,0,0,.34)}
+.sheet.tall{max-height:92vh}
+.sheet.full{height:100vh;height:100dvh;max-height:100dvh;border-radius:18px}
+.grab{width:38px;height:5px;border-radius:3px;background:#C7C7CC;margin:8px auto 2px;flex:0 0 auto}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 18px 12px;border-bottom:1px solid var(--sep);flex:0 0 auto}
+.sh-title{font-size:17px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txt-btn{border:0;background:none;font-family:inherit;font-size:16.5px;color:var(--blue);padding:6px 2px;flex:0 0 auto}
+.txt-btn.strong{font-weight:600}
+/* memo editor */
+.memo-body{flex:1;min-height:0;overflow-y:auto;padding:0 18px}
+#memoInput{width:100%;border:0;outline:none;resize:none;font-family:inherit;font-size:18px;line-height:1.65;padding:14px 0 10px;min-height:220px;background:none;color:var(--label);display:block}
+#memoInput::placeholder{color:#C7C7CC}
+.memo-imgs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding-bottom:14px}
+.mimg{position:relative;border-radius:10px;overflow:hidden;background:var(--group)}
+.mimg img{width:100%;display:block}
+.mimg button{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:14px;line-height:1;display:grid;place-items:center}
+.memo-bar{flex:0 0 auto;display:flex;gap:8px;padding:10px 18px 12px;border-top:1px solid var(--sep);background:#fff}
+.memo-bar button{flex:1;border:0;border-radius:10px;background:var(--group);font-family:inherit;font-size:15px;font-weight:600;color:var(--blue);padding:11px 0;transition:transform .18s}
+.memo-bar button:active{transform:scale(.97)}
+.memo-bar button.danger{color:var(--red)}
+/* period sheet */
+.psheet{padding:6px 18px 20px;overflow-y:auto;flex:1 1 auto;min-height:0}
+.prow{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--sep);font-size:16px}
+.prow:last-child{border-bottom:0}
+.prow input[type="date"]{border:0;background:var(--group);font-family:inherit;font-size:15.5px;padding:8px 12px;border-radius:9px;color:var(--label)}
+.stepper{display:flex;align-items:center;gap:14px;background:var(--group);border-radius:9px;padding:5px 6px}
+.stepper button{width:30px;height:28px;border:0;background:#fff;border-radius:7px;font-size:18px;line-height:1;color:var(--blue);font-family:inherit}
+.stepper b{min-width:26px;text-align:center;font-size:16px;font-weight:600}
+.switch{width:51px;height:31px;border-radius:100px;background:#E5E5EA;position:relative;transition:background .28s;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.16);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+.switch.on{background:var(--green)}
+.switch.on::after{transform:translateX(20px)}
+.phint{margin-top:16px;font-size:13.5px;color:var(--gray);line-height:1.7;background:var(--group);border-radius:12px;padding:12px 14px}
+.phint b{color:var(--label)}
+/* export */
+.expBody{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.seg2{display:grid;grid-template-columns:repeat(2,1fr);margin:12px 18px 8px;padding:2px;background:#EFEFF4;border-radius:10px;position:relative;flex:0 0 auto}
+.seg2 span.thumb2{position:absolute;top:2px;bottom:2px;width:calc((100% - 4px)/2);background:#fff;border-radius:8px;box-shadow:0 3px 8px rgba(0,0,0,.10);transition:left .34s cubic-bezier(.32,.72,0,1)}
+.seg2 button{position:relative;z-index:1;border:0;background:none;font-family:inherit;font-size:15px;padding:8px 0;font-weight:500;color:var(--label)}
+.seg2 button.on{font-weight:600}
+.expBar{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 8px;font-size:14px;color:var(--gray);flex:0 0 auto}
+.expBar button{border:0;background:none;font-family:inherit;font-size:14.5px;color:var(--blue);font-weight:600}
+.expList{padding:0 12px}
+.exp-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:none;font-family:inherit;padding:12px 6px;border-bottom:1px solid var(--sep)}
+.exp-row .cbox{width:22px;height:22px;border-radius:50%;border:1.6px solid #C7C7CC;flex:0 0 auto;display:grid;place-items:center;color:#fff;font-size:13px;transition:background .2s,border-color .2s}
+.exp-row.on .cbox{background:var(--blue);border-color:var(--blue)}
+.exp-row .edate{font-size:13px;color:var(--gray);width:44px;flex:0 0 auto}
+.exp-row .etext{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expActions{display:flex;gap:10px;padding:12px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--sep);background:rgba(255,255,255,.96);backdrop-filter:blur(12px);flex:0 0 auto}
+.expActions button{flex:1;border:0;border-radius:12px;background:var(--red);color:#fff;font-family:inherit;font-size:15.5px;font-weight:600;padding:13px 0;transition:transform .18s}
+.expActions button.alt{background:var(--group);color:var(--blue)}
+.expActions button:active{transform:scale(.97)}
+.expNote{padding:0 18px 10px;font-size:13.5px;color:var(--gray);line-height:1.7}
+.chartBox{padding:6px 14px 12px}
+.chartBox canvas{width:100%;height:auto;border-radius:12px;background:#fff}
+.expList.small .exp-row{padding:10px 6px}
+/* settings */
+.setBody{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 18px 24px}
+.setGroup{background:var(--group);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.setRow{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;font-family:inherit;font-size:16px;border:0;background:none;color:var(--label);border-bottom:1px solid rgba(0,0,0,.05)}
+.setRow:last-child{border-bottom:0}
+.setRow.link{color:var(--blue);font-weight:500}
+.setRow .val{color:var(--gray);font-weight:500;font-size:15px}
+.note{font-size:13px;color:var(--gray);line-height:1.8;padding:0 4px}
+/* alert */
+.alert-wrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:32px}
+.alert-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .3s}
+.alert{position:relative;width:100%;max-width:302px;background:rgba(255,255,255,.94);backdrop-filter:blur(22px);border-radius:18px;padding:24px 20px 14px;text-align:center;transform:scale(.86);opacity:0;transition:transform .44s cubic-bezier(.34,1.4,.64,1),opacity .26s}
+.alert.in{transform:scale(1);opacity:1}
+.alert-ico{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center}
+.alert-ico svg{width:26px;height:26px}
+.alert-t{font-size:18px;font-weight:600;letter-spacing:-.2px}
+.alert-b{font-size:14.5px;color:#3C3C43;line-height:1.6;margin-top:8px;white-space:pre-wrap}
+.alert-btn{width:100%;border:0;background:none;font-family:inherit;font-size:17px;font-weight:600;padding:14px 0 4px;margin-top:10px;border-top:1px solid rgba(0,0,0,.08)}
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translate(-50%,18px);background:rgba(0,0,0,.80);color:#fff;font-size:14px;padding:11px 18px;border-radius:100px;opacity:0;transition:opacity .3s,transform .3s;z-index:80;pointer-events:none;max-width:82vw;text-align:center;line-height:1.4}
+#toast.in{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="nav">
+    <button class="title" id="navTitle" data-act="today">—</button>
+    <div class="nav-btns">
+      <button class="txt-pill" data-act="today">今天</button>
+      <button class="icon-btn" data-act="export" aria-label="导出"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10"/><path d="M8 9.8l4 4 4-4"/><path d="M4.5 15.5v2.5a2 2 0 002 2h11a2 2 0 002-2v-2.5"/></svg></button>
+      <button class="icon-btn" data-act="settings" aria-label="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.4 5.4l1.8 1.8M16.8 16.8l1.8 1.8M18.6 5.4l-1.8 1.8M7.2 16.8l-1.8 1.8"/></svg></button>
+    </div>
+  </div>
+  <div class="seg" id="seg">
+    <span class="thumb" id="segThumb"></span>
+    <button data-act="view" data-view="year">年</button>
+    <button data-act="view" data-view="month">月</button>
+    <button data-act="view" data-view="week">周</button>
+    <button data-act="view" data-view="day">日</button>
+  </div>
+  <div id="viewHost"></div>
+</div>
+<div id="toast"></div>
+<script>
+(function(){
+'use strict';
+
+/* ========== 基础工具 ========== */
+var pad=function(n){return String(n).padStart(2,'0');};
+var keyOf=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+var parseKey=function(s){var a=s.split('-');return new Date(+a[0],+a[1]-1,+a[2]);};
+var TODAY=keyOf(new Date());
+var dayDiff=function(a,b){return Math.round((parseKey(b)-parseKey(a))/86400000);};
+var addDays=function(s,n){var d=parseKey(s);d.setDate(d.getDate()+n);return keyOf(d);};
+var WD=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+var CN=['一','二','三','四','五','六','日'];
+var FONT='"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,sans-serif';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmtDate(ds){var d=parseKey(ds);return (d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()];}
+function fmtShort(ds){var d=parseKey(ds);return pad(d.getMonth()+1)+'/'+pad(d.getDate());}
+function stamp(){var d=new Date();return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());}
+function nowText(){var d=new Date();return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+pad(d.getHours())+':'+pad(d.getMinutes());}
+
+/* ========== 存储 ========== */
+var LS='yueshu.v1';
+var DEF={memos:{},marks:{},periods:[],settings:{reminder:true,len:5,cycle:28,seen:{}}};
+var store=null, storageOK=true;
+function loadStore(){
+  try{
+    var raw=localStorage.getItem(LS);
+    store=raw?JSON.parse(raw):JSON.parse(JSON.stringify(DEF));
+    storageOK=true;
+  }catch(e){
+    storageOK=false;
+    store=JSON.parse(JSON.stringify(DEF));
+  }
+  store.memos=store.memos||{};
+  store.marks=store.marks||{};
+  store.periods=Array.isArray(store.periods)?store.periods:[];
+  store.settings=store.settings||{};
+  if(store.settings.reminder==null)store.settings.reminder=true;
+  if(!store.settings.len)store.settings.len=5;
+  if(!store.settings.cycle)store.settings.cycle=28;
+  store.settings.seen=store.settings.seen||{};
+}
+function saveStore(){
+  if(!storageOK)return;
+  try{localStorage.setItem(LS,JSON.stringify(store));}
+  catch(e){toast('本机存储空间不足，请先删除一些备忘图片');}
+}
+
+/* ========== 法定节假日（国务院办公厅 2025–2027） ========== */
+var MARK_COLOR={future:'#34C759',memorial:'#FF3B30',important:'#FFD60A'};
+var MARK_NAME={future:'未来日',memorial:'纪念日',important:'重要日'};
+var HOLIDAYS=[
+  ['2025-01-01','2025-01-01','元旦'],
+  ['2025-01-28','2025-02-04','春节'],
+  ['2025-04-04','2025-04-06','清明节'],
+  ['2025-05-01','2025-05-05','劳动节'],
+  ['2025-05-31','2025-06-02','端午节'],
+  ['2025-10-01','2025-10-08','国庆节'],
+  ['2026-01-01','2026-01-03','元旦'],
+  ['2026-02-15','2026-02-23','春节'],
+  ['2026-04-04','2026-04-06','清明节'],
+  ['2026-05-01','2026-05-05','劳动节'],
+  ['2026-06-19','2026-06-21','端午节'],
+  ['2026-09-25','2026-09-27','中秋节'],
+  ['2026-10-01','2026-10-07','国庆节'],
+  ['2027-01-01','2027-01-03','元旦'],
+  ['2027-02-05','2027-02-13','春节'],
+  ['2027-04-03','2027-04-05','清明节'],
+  ['2027-05-01','2027-05-05','劳动节'],
+  ['2027-06-09','2027-06-09','端午节'],
+  ['2027-09-15','2027-09-15','中秋节'],
+  ['2027-10-01','2027-10-07','国庆节']
+];
+var HOL={};
+HOLIDAYS.forEach(function(h){
+  var s=h[0],first=true;
+  while(s<=h[1]){
+    HOL[s]={name:h[2],first:first};
+    first=false;
+    s=addDays(s,1);
+  }
+});
+
+/* ========== 月经数据 ========== */
+function sortPeriods(){
+  return store.periods.slice().sort(function(a,b){return a.start<b.start?-1:(a.start>b.start?1:0);});
+}
+function periodStats(){
+  var recs=sortPeriods();
+  var ints=[];
+  for(var i=1;i<recs.length;i++){
+    var v=dayDiff(recs[i-1].start,recs[i].start);
+    if(v>0)ints.push(v);
+  }
+  var avgInt=ints.length?Math.round(ints.reduce(function(a,b){return a+b;},0)/ints.length):(store.settings.cycle||28);
+  var avgLen=recs.length?Math.round(recs.reduce(function(a,b){return a+(+b.days||0);},0)/recs.length*10)/10:(store.settings.len||5);
+  var last=recs[recs.length-1];
+  var next=null;
+  if(last){
+    var s=addDays(last.start,avgInt);
+    var guard=0;
+    while(s<TODAY&&guard<400){s=addDays(s,avgInt);guard++;}
+    next=s;
+  }
+  var pain=recs.filter(function(r){return !!r.pain;}).length;
+  return {recs:recs,ints:ints,avgInt:avgInt,avgLen:avgLen,last:last,next:next,pain:pain};
+}
+function periodInfoForDate(ds){
+  var recs=sortPeriods();
+  for(var i=0;i<recs.length;i++){
+    var r=recs[i],n=Math.max(1,+r.days||1);
+    var end=addDays(r.start,n-1);
+    if(ds>=r.start&&ds<=end){return {rec:r,n:dayDiff(r.start,ds)+1,end:end,pain:!!r.pain,len:n};}
+  }
+  return null;
+}
+function findRecordContaining(ds){
+  var recs=sortPeriods();
+  for(var i=0;i<recs.length;i++){
+    var r=recs[i],n=Math.max(1,+r.days||1);
+    var end=addDays(r.start,n-1);
+    if(ds>=r.start&&ds<=end)return r;
+  }
+  return null;
+}
+function predDates(){
+  var st=periodStats();
+  var out=[];
+  if(!st.recs.length)return out;
+  var s=st.next;
+  for(var i=0;i<3;i++){out.push(s);s=addDays(s,st.avgInt);}
+  return out;
+}
+
+/* ========== 派生状态 ========== */
+var S={view:'month',cursor:TODAY,sel:TODAY};
+var RMAP={},PREDS={};
+function refreshDerived(){
+  RMAP={};
+  var recs=sortPeriods();
+  recs.forEach(function(r){
+    var n=Math.max(1,+r.days||1);
+    for(var i=0;i<n;i++){RMAP[addDays(r.start,i)]=true;}
+  });
+  PREDS={};
+  predDates().forEach(function(d){PREDS[d]=true;});
+}
+
+/* ========== 视图 ========== */
+var host=document.getElementById('viewHost');
+
+function titleText(){
+  var d=parseKey(S.cursor);
+  if(S.view==='year')return d.getFullYear()+'年';
+  if(S.view==='month')return d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+  if(S.view==='week'){
+    var st=weekStart(S.cursor),en=addDays(st,6);
+    var a=parseKey(st),b=parseKey(en);
+    if(a.getMonth()===b.getMonth())return (a.getMonth()+1)+'月'+a.getDate()+'日–'+b.getDate()+'日';
+    return (a.getMonth()+1)+'月'+a.getDate()+'日–'+(b.getMonth()+1)+'月'+b.getDate()+'日';
+  }
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+
+function dayCellHTML(dt,other){
+  var ds=keyOf(dt);
+  var mark=store.marks[ds];
+  var done=(mark==='future'&&ds<TODAY);
+  var hol=HOL[ds];
+  var memo=store.memos[ds];
+  var cls='day'+(other?' other':'')+(mark&&!done?' marked':'')+(mark==='important'?' yellow':'')+(done?' done':'')+(hol?' hol':'')+(ds===TODAY?' today':'');
+  var style=(mark&&!done)?' style="--c:'+MARK_COLOR[mark]+'"':'';
+  var dots='';
+  if(memo&&(memo.text||(memo.images||[]).length))dots+='<i class="d-memo"></i>';
+  if(RMAP[ds])dots+='<i class="d-period"></i>';
+  if(PREDS[ds])dots+='<i class="d-pred"></i>';
+  var check=done?'<svg class="chk" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#34C759"/><path d="M7 12.4l3.4 3.4L17 8.3" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>':'';
+  return '<button class="'+cls+'"'+style+' data-act="pick" data-date="'+ds+'"'+(other?' data-other="1"':'')+'>'
+    +'<span class="numwrap"><span class="ring"></span><span class="disc"></span><span class="dnum">'+dt.getDate()+'</span>'+check+'</span>'
+    +'<span class="tag">'+((hol&&hol.first)?hol.name:'')+'</span>'
+    +'<span class="dots">'+dots+'</span></button>';
+}
+
+function monthPage(){
+  var d=parseKey(S.cursor),y=d.getFullYear(),m=d.getMonth()+1;
+  var first=new Date(y,m-1,1);
+  var dow=(first.getDay()+6)%7;
+  var days=new Date(y,m,0).getDate();
+  var rows=Math.ceil((dow+days)/7);
+  var cells='';
+  for(var i=0;i<rows*7;i++){
+    var dt=new Date(y,m-1,i-dow+1);
+    cells+=dayCellHTML(dt,dt.getMonth()!==m-1);
+  }
+  return '<div class="mhead">'+CN.map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>'
+    +'<div class="grid" style="grid-template-rows:repeat('+rows+',1fr)">'+cells+'</div>';
+}
+
+function weekStart(ds){
+  var d=parseKey(ds);
+  var off=(d.getDay()+6)%7;
+  return addDays(ds,-off);
+}
+
+function weekPage(){
+  var st=weekStart(S.cursor);
+  var rows='';
+  for(var i=0;i<7;i++){
+    var ds=addDays(st,i),d=parseKey(ds);
+    var memo=store.memos[ds],mark=store.marks[ds],hol=HOL[ds];
+    var done=(mark==='future'&&ds<TODAY);
+    var items=[];
+    if(hol&&hol.first)items.push('<span class="chip-sm" style="color:var(--red)">'+hol.name+'</span>');
+    if(mark&&!done)items.push('<span class="chip-sm" style="color:'+MARK_COLOR[mark]+'"><i style="width:8px;height:8px;border-radius:50%;background:'+MARK_COLOR[mark]+';display:inline-block;margin-right:6px"></i>'+MARK_NAME[mark]+'</span>');
+    if(done)items.push('<span class="chip-sm" style="color:var(--green)">未来日 · 已到期</span>');
+    if(RMAP[ds])items.push('<span class="chip-sm" style="color:var(--pink)">经期</span>');
+    if(memo&&(memo.text||(memo.images||[]).length)){
+      var t=(memo.text||'').replace(/\s+/g,' ').slice(0,24)||'图片备忘';
+      items.push('<div class="wev"><i></i><span>'+esc(t)+'</span></div>');
+    }
+    rows+='<button class="wrow" data-act="pick" data-date="'+ds+'">'
+      +'<div class="wd"><div class="wname">'+WD[d.getDay()].replace('星期','')+'</div>'
+      +'<div class="wnum'+(ds===TODAY?' today':'')+'"'+(mark&&!done?' style="color:'+MARK_COLOR[mark]+'"':'')+'>'+d.getDate()+'</div></div>'
+      +'<div class="wbody">'+(items.join('')||'<span class="wempty">无记录</span>')+'</div></button>';
+  }
+  return '<div class="wsec">'+rows+'</div>';
+}
+
+function dayDetailHTML(ds){
+  var d=parseKey(ds);
+  var hol=HOL[ds],mark=store.marks[ds],memo=store.memos[ds];
+  var pi=periodInfoForDate(ds),st=periodStats();
+  var done=(mark==='future'&&ds<TODAY);
+  var isT=(ds===TODAY);
+
+  var chips=['future','memorial','important'].map(function(k){
+    var on=(mark===k);
+    var dis=(k==='future'&&ds<TODAY&&!on);
+    return '<button class="chip'+(on?' on':'')+(dis?' dis':'')+(k==='important'?' yellow':'')+'" data-act="mark" data-date="'+ds+'" data-mark="'+k+'" style="--c:'+MARK_COLOR[k]+'"><i></i>'+MARK_NAME[k]+'</button>';
+  }).join('');
+
+  var memoBlock=(memo&&(memo.text||(memo.images||[]).length))
+    ? '<button class="card memo-card" data-act="memo" data-date="'+ds+'">'
+        +(memo.text?'<div class="mt">'+esc(memo.text.slice(0,220))+'</div>':'')
+        +((memo.images||[]).length?'<div class="thumbs">'+memo.images.slice(0,3).map(function(s){return '<img src="'+s+'">';}).join('')+'</div>':'')
+        +'<div class="mmeta">'+(memo.text?memo.text.length+' 字 · ':'')+((memo.images||[]).length)+' 张图片</div>'
+      +'</button>'
+    : '<button class="empty-card" data-act="memo" data-date="'+ds+'">＋ 写备忘录</button>';
+
+  var periodBlock='<div class="card">'
+    +'<div class="pk"><span>平均间隔</span><b>'+(st.recs.length>1?st.avgInt+' 天':'待记录')+'</b></div>'
+    +'<div class="pk"><span>平均经期</span><b>'+(st.recs.length?st.avgLen+' 天':'—')+'</b></div>'
+    +'<div class="pk"><span>下次预计</span><b>'+(st.next?fmtShort(st.next):'—')+'</b></div>'
+    +(pi?'<div class="ptag">本轮第 '+pi.n+' 天'+(pi.pain?' · 已记录痛经':'')+'</div>':'')
+    +'<div class="pbtns"><button data-act="period" data-date="'+ds+'">'+(findRecordContaining(ds)?'编辑本轮记录':'记录本轮月经')+'</button>'
+    +'<button data-act="export" data-tab="period">趋势图</button></div></div>';
+
+  return '<div class="dayhead">'
+    +'<div class="bigdate" style="'+(isT?'color:var(--red)':'')+'">'+d.getDate()+'</div>'
+    +'<div class="dmeta"><div class="w">'+WD[d.getDay()]+'</div><div class="y">'+d.getFullYear()+'年'+(d.getMonth()+1)+'月</div>'
+    +(hol?'<div class="hol">'+hol.name+' · 法定节假日</div>':'')
+    +'</div></div>'
+    +'<div class="sect"><div class="sect-t">标记</div><div class="chips">'+chips+'</div>'
+    +(done?'<div class="phint" style="margin-top:10px">这一天已到来，未来日自动转为绿色对勾。</div>':'')
+    +'</div>'
+    +'<div class="sect"><div class="sect-t">备忘录</div>'+memoBlock+'</div>'
+    +'<div class="sect"><div class="sect-t">月经</div>'+periodBlock+'</div>';
+}
+
+function dayPage(){return '<div class="dd">'+dayDetailHTML(S.cursor)+'</div>';}
+
+function miniMonth(y,m){
+  var first=new Date(y,m-1,1);
+  var dow=(first.getDay()+6)%7;
+  var days=new Date(y,m,0).getDate();
+  var total=Math.ceil((dow+days)/7)*7;
+  var cells='';
+  for(var i=0;i<total;i++){
+    var dt=new Date(y,m-1,i-dow+1);
+    var ds=keyOf(dt),d=dt.getDate(),other=dt.getMonth()!==m-1;
+    var mark=store.marks[ds];
+    var done=(mark==='future'&&ds<TODAY);
+    var cls='mc'+(other?' other':'')+(ds===TODAY?' today':'')+(mark&&!done?' mark':'')+(done?' done':'')+(HOL[ds]?' hol':'');
+    cells+='<button class="'+cls+'" data-act="pick" data-date="'+ds+'"'+(other?' data-other="1"':'')+(mark&&!done?' style="--c:'+MARK_COLOR[mark]+'"':'')+'>'+(other?'':d)+'</button>';
+  }
+  return '<div class="mini"><div class="mini-h" data-act="mini-month" data-y="'+y+'" data-m="'+m+'">'+m+'月</div>'
+    +'<div class="mini-w">'+CN.map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>'
+    +'<div class="mini-g">'+cells+'</div></div>';
+}
+
+function yearPage(){
+  var y=parseKey(S.cursor).getFullYear();
+  var html='';
+  for(var m=1;m<=12;m++)html+=miniMonth(y,m);
+  return '<div class="yearWrap">'+html+'</div>';
+}
+
+function render(dir){
+  refreshDerived();
+  var html=S.view==='month'?monthPage():S.view==='week'?weekPage():S.view==='day'?dayPage():yearPage();
+  var scroll=(S.view==='week'||S.view==='day'||S.view==='year');
+  var wrap=document.createElement('div');
+  wrap.className='page'+(scroll?' scroll':'');
+  if(dir)wrap.style.animation=(dir>0?'inR':'inL')+' .34s cubic-bezier(.32,.72,0,1)';
+  wrap.innerHTML=html;
+  host.innerHTML='';
+  host.appendChild(wrap);
+  updateTitle();
+  updateSeg();
+}
+
+function updateTitle(){
+  var t=document.getElementById('navTitle');
+  t.textContent=titleText();
+  t.classList.toggle('week',S.view==='week');
+}
+function updateSeg(){
+  var views=['year','month','week','day'];
+  var idx=views.indexOf(S.view);
+  var btns=document.querySelectorAll('#seg button');
+  btns.forEach(function(b){b.classList.toggle('on',b.dataset.view===S.view);});
+  var th=document.getElementById('segThumb');
+  th.style.width='calc((100% - 4px)/4)';
+  th.style.left='calc(2px + (100% - 4px)/4 * '+idx+')';
+}
+function setView(v){
+  if(S.view===v)return;
+  S.view=v;
+  render(0);
+}
+function shift(n){
+  var d=parseKey(S.cursor);
+  if(S.view==='month'){d.setDate(1);d.setMonth(d.getMonth()+n);}
+  else if(S.view==='week'){d.setDate(d.getDate()+7*n);}
+  else if(S.view==='day'){d.setDate(d.getDate()+n);}
+  else{d.setFullYear(d.getFullYear()+n);}
+  S.cursor=keyOf(d);
+  render(n>0?1:-1);
+}
+function goToday(){S.cursor=TODAY;render(0);}
+
+/* ========== Sheet ========== */
+var sheetEl=null;
+function openSheet(inner,opt){
+  opt=opt||{};
+  closeSheet(true);
+  var wrap=document.createElement('div');
+  wrap.className='sheet-wrap';
+  wrap.innerHTML='<div class="sheet-backdrop"></div>'
+    +'<div class="sheet '+(opt.cls||'')+'"><div class="grab"></div>'+inner+'</div>';
+  document.body.appendChild(wrap);
+  document.body.classList.add('noscroll');
+  var bd=wrap.querySelector('.sheet-backdrop');
+  bd.onclick=function(){if(opt.backdrop)opt.backdrop();else closeSheet();};
+  requestAnimationFrame(function(){wrap.classList.add('in');});
+  sheetEl=wrap;
+  return wrap.querySelector('.sheet');
+}
+function closeSheet(instant){
+  document.body.classList.remove('noscroll');
+  if(!sheetEl)return;
+  var w=sheetEl;
+  sheetEl=null;
+  if(instant){w.remove();return;}
+  w.classList.remove('in');
+  setTimeout(function(){w.remove();},440);
+}
+function refreshDayRegion(ds){
+  var dd=document.getElementById('dd');
+  if(dd)dd.innerHTML=dayDetailHTML(ds);
+}
+
+function openDaySheet(ds){
+  S.cursor=ds;
+  openSheet('<div class="sheet-head"><span class="sh-title">'+fmtDate(ds)+'</span><button class="txt-btn strong" data-act="close">完成</button></div>'
+    +'<div id="dd" class="dd sheet-scroll">'+dayDetailHTML(ds)+'</div>');
+}
+
+/* ========== 备忘录 ========== */
+var memoDraft=null;
+function memoImgsHTML(draft){
+  return draft.images.map(function(src,i){
+    return '<div class="mimg"><img src="'+src+'"><button data-act="memo-delimg" data-i="'+i+'">✕</button></div>';
+  }).join('');
+}
+function renderMemoImgs(){
+  var box=document.getElementById('memoImgs');
+  if(box&&memoDraft)box.innerHTML=memoImgsHTML(memoDraft);
+}
+function stashMemo(){
+  if(!memoDraft)return;
+  var ta=document.getElementById('memoInput');
+  if(ta)memoDraft.text=ta.value;
+  var ds=memoDraft.ds;
+  if((memoDraft.text||'').trim()||memoDraft.images.length){
+    store.memos[ds]={text:memoDraft.text,images:memoDraft.images,updated:Date.now()};
+  }else{
+    delete store.memos[ds];
+  }
+  saveStore();
+}
+function openMemo(ds,ret){
+  var m=store.memos[ds]||{text:'',images:[]};
+  memoDraft={ds:ds,text:m.text||'',images:(m.images||[]).slice(),ret:ret||null};
+  openSheet('<div class="sheet-head">'
+      +'<button class="txt-btn" data-act="memo-cancel">取消</button>'
+      +'<span class="sh-title">'+fmtDate(ds)+'</span>'
+      +'<button class="txt-btn strong" data-act="memo-save">完成</button></div>'
+    +'<div class="memo-body"><textarea id="memoInput" placeholder="记录这一天…">'+esc(m.text||'')+'</textarea>'
+      +'<div class="memo-imgs" id="memoImgs">'+memoImgsHTML(memoDraft)+'</div></div>'
+    +'<div class="memo-bar"><button data-act="memo-img">插入图片</button>'
+      +'<button data-act="memo-export">导出本篇</button>'
+      +'<button data-act="memo-del" class="danger">删除</button></div>'
+    +'<input type="file" id="imgPicker" accept="image/*" multiple style="display:none">',{cls:'full',backdrop:function(){saveMemo();}});
+  var ta=document.getElementById('memoInput');
+  if(ta){
+    ta.oninput=function(){memoDraft.text=ta.value;};
+    setTimeout(function(){ta.focus();},320);
+  }
+  var picker=document.getElementById('imgPicker');
+  if(picker)picker.onchange=function(e){
+    var files=Array.prototype.slice.call(e.target.files||[]);
+    if(!files.length)return;
+    toast('正在处理图片…');
+    var jobs=files.map(compressImage);
+    Promise.all(jobs).then(function(list){
+      list.forEach(function(src){if(src)memoDraft.images.push(src);});
+      renderMemoImgs();
+    });
+    e.target.value='';
+  };
+}
+function compressImage(file){
+  return new Promise(function(res){
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){
+      var max=1100;
+      var w=img.width,h=img.height;
+      var k=Math.min(1,max/Math.max(w,h));
+      w=Math.round(w*k);h=Math.round(h*k);
+      var cv=document.createElement('canvas');
+      cv.width=w;cv.height=h;
+      var ctx=cv.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      res(cv.toDataURL('image/jpeg',0.72));
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);res(null);};
+    img.src=url;
+  });
+}
+function saveMemo(){
+  if(!memoDraft)return;
+  var ta=document.getElementById('memoInput');
+  if(ta)memoDraft.text=ta.value;
+  var ds=memoDraft.ds;
+  if((memoDraft.text||'').trim()||memoDraft.images.length){
+    store.memos[ds]={text:memoDraft.text,images:memoDraft.images,updated:Date.now()};
+  }else{
+    delete store.memos[ds];
+  }
+  var ret=memoDraft.ret;
+  saveStore();
+  memoDraft=null;
+  closeSheet();
+  refreshDerived();
+  render(0);
+  if(ret==='sheet')setTimeout(function(){openDaySheet(ds);},140);
+}
+
+/* ========== 标记 ========== */
+function toggleMark(ds,type){
+  if(type==='future'&&ds<TODAY){toast('未来日只能标注今天及以后的日期');return;}
+  if(store.marks[ds]===type)delete store.marks[ds];
+  else store.marks[ds]=type;
+  saveStore();
+  refreshDerived();
+  render(0);
+  refreshDayRegion(ds);
+}
+
+/* ========== 月经 ========== */
+var periodDraft=null;
+function periodFormHTML(st){
+  var state=periodDraft;
+  var stats=periodStats();
+  return '<div class="prow"><span>开始日期</span><input type="date" id="pStart" value="'+state.start+'"></div>'
+    +'<div class="prow"><span>经期天数</span><div class="stepper">'
+      +'<button data-act="p-days" data-d="-1">−</button><b id="pDays">'+state.days+'</b>'
+      +'<button data-act="p-days" data-d="1">＋</button></div></div>'
+    +'<div class="prow"><span>本轮是否痛经</span><div class="switch'+(state.pain?' on':'')+'" data-act="p-pain" id="pPain"></div></div>'
+    +'<div class="phint">'
+      +(stats.recs.length
+          ?'已记录 <b>'+stats.recs.length+'</b> 轮 · 平均间隔 <b>'+stats.avgInt+' 天</b> · 平均经期 <b>'+stats.avgLen+' 天</b>'
+            +(stats.next?'<br>下次预计 <b>'+stats.next+'</b>':'<br>至少两轮记录后可预测下次时间')
+          :'还没有记录。保存本轮后，就能看到平均间隔与下次预测。')
+      +'</div>';
+}
+function openPeriod(ds,ret){
+  var existing=findRecordContaining(ds);
+  periodDraft={
+    start:existing?existing.start:ds,
+    days:existing?Math.max(1,+existing.days||1):(store.settings.len||5),
+    pain:existing?!!existing.pain:false,
+    editing:existing?existing.start:null,
+    ret:ret||null
+  };
+  openSheet('<div class="sheet-head">'
+      +'<button class="txt-btn" data-act="close">取消</button>'
+      +'<span class="sh-title">月经记录</span>'
+      +'<button class="txt-btn strong" data-act="p-save">保存</button></div>'
+    +'<div class="psheet" id="psheet">'+periodFormHTML()+'</div>');
+  var inp=document.getElementById('pStart');
+  if(inp)inp.onchange=function(){periodDraft.start=inp.value||periodDraft.start;};
+}
+function refreshPeriodForm(){
+  var box=document.getElementById('psheet');
+  if(!box||!periodDraft)return;
+  var now=document.getElementById('pStart');
+  if(now&&now.value)periodDraft.start=now.value;
+  box.innerHTML=periodFormHTML();
+  var inp=document.getElementById('pStart');
+  if(inp)inp.onchange=function(){periodDraft.start=inp.value||periodDraft.start;};
+}
+function savePeriod(){
+  if(!periodDraft)return;
+  var d=periodDraft;
+  var rs=d.start;
+  store.periods=store.periods.filter(function(r){return r.start!==d.start&&r.start!==d.editing;});
+  store.periods.push({start:d.start,days:Math.max(1,+d.days||1),pain:!!d.pain});
+  var ret=d.ret;
+  periodDraft=null;
+  saveStore();
+  closeSheet();
+  refreshDerived();
+  render(0);
+  if(ret==='sheet')setTimeout(function(){openDaySheet(rs);},140);
+}
+
+/* ========== 图表绘制 ========== */
+function roundRectPath(ctx,x,y,w,h,r){
+  r=Math.max(0,Math.min(r,Math.min(w,h)/2));
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+function drawChart(ctx,ox,oy,W,H,scale){
+  var st=periodStats();
+  var recs=st.recs;
+  var s=scale||W/880;
+  ctx.save();
+  ctx.textAlign='left';ctx.textBaseline='top';
+  if(recs.length<2){
+    ctx.fillStyle='#8E8E93';
+    ctx.font='500 '+(15*s)+'px '+FONT;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('至少记录两轮，才能生成间隔趋势图',ox+W/2,oy+H/2);
+    ctx.restore();
+    return;
+  }
+  var pl=58*s,pt=66*s,pr=18*s,pb=58*s;
+  var plotW=W-pl-pr,plotH=H-pt-pb;
+  var rows=recs.map(function(r,i){
+    return {start:r.start,len:Math.max(1,+r.days||1),pain:!!r.pain,intv:i>0?dayDiff(recs[i-1].start,r.start):0};
+  });
+  var series=rows.slice(1);
+  var vals=series.map(function(r){return r.intv;}).concat(rows.map(function(r){return r.len;}));
+  var maxV=Math.max(28,Math.ceil(Math.max.apply(null,vals)*1.15/5)*5);
+  var n=series.length;
+  var band=plotW/n;
+
+  ctx.strokeStyle='#F2F2F7';ctx.lineWidth=1;
+  ctx.fillStyle='#B0B0B5';
+  ctx.font='500 '+(11*s)+'px '+FONT;
+  var t,i;
+  for(t=0;t<=5;t++){
+    var v=Math.round(maxV*t/5);
+    var y=oy+pt+plotH-(v/maxV)*plotH;
+    ctx.beginPath();ctx.moveTo(ox+pl,y);ctx.lineTo(ox+pl+plotW,y);ctx.stroke();
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(String(v),ox+pl-8*s,y);
+  }
+  var xAt=function(i){return ox+pl+band*(i+0.5);};
+  var yAt=function(v){return oy+pt+plotH-(v/maxV)*plotH;};
+
+  series.forEach(function(r,idx){
+    var bw=Math.min(band*0.46,44*s);
+    var x=xAt(idx)-bw/2;
+    var y=yAt(r.intv);
+    var h=oy+pt+plotH-y;
+    var g=ctx.createLinearGradient(0,y,0,y+h);
+    g.addColorStop(0,'#FF6B8A');g.addColorStop(1,'#FFC7D2');
+    ctx.fillStyle=g;
+    roundRectPath(ctx,x,y,bw,Math.max(h,2),Math.min(bw/2,8*s));
+    ctx.fill();
+    if(r.pain){
+      ctx.fillStyle='#FF3B30';
+      ctx.beginPath();ctx.arc(xAt(idx),y-9*s,3.4*s,0,Math.PI*2);ctx.fill();
+    }
+    if(n<=10||idx%2===0){
+      ctx.fillStyle='#8E8E93';
+      ctx.font='500 '+(10*s)+'px '+FONT;
+      ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillText(fmtShort(r.start),xAt(idx),oy+pt+plotH+10*s);
+    }
+  });
+
+  ctx.strokeStyle='#FF9500';ctx.lineWidth=2.2*s;
+  ctx.beginPath();
+  series.forEach(function(r,idx){
+    var x=xAt(idx),y=yAt(r.len);
+    if(idx===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  series.forEach(function(r,idx){
+    var x=xAt(idx),y=yAt(r.len);
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x,y,4.4*s,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#FF9500';ctx.lineWidth=1.6*s;
+    ctx.beginPath();ctx.arc(x,y,4.4*s,0,Math.PI*2);ctx.stroke();
+  });
+
+  var lgY=oy+pt-30*s;
+  ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillStyle='#FF6B8A';
+  roundRectPath(ctx,ox+pl,lgY-6*s,11*s,12*s,3*s);ctx.fill();
+  ctx.fillStyle='#3C3C43';ctx.font='500 '+(11*s)+'px '+FONT;
+  ctx.fillText('间隔天数',ox+pl+17*s,lgY);
+  ctx.strokeStyle='#FF9500';ctx.lineWidth=1.8*s;
+  ctx.beginPath();ctx.moveTo(ox+pl+92*s,lgY);ctx.lineTo(ox+pl+110*s,lgY);ctx.stroke();
+  ctx.fillStyle='#3C3C43';
+  ctx.fillText('经期天数',ox+pl+116*s,lgY);
+  ctx.fillStyle='#FF3B30';
+  ctx.beginPath();ctx.arc(ox+pl+192*s,lgY,3.4*s,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3C3C43';
+  ctx.fillText('痛经',ox+pl+201*s,lgY);
+  ctx.restore();
+}
+
+/* ========== PDF 生成 ========== */
+function pdfFromCanvases(canvases){
+  var PW=595.28,PH=841.89;
+  var items=canvases.map(function(cv){
+    return {url:cv.toDataURL('image/jpeg',0.86),w:cv.width,h:cv.height};
+  });
+  var n=items.length;
+  var out='%PDF-1.4\n';
+  var offsets={};
+  function put(id,body){
+    offsets[id]=out.length;
+    out+=id+' 0 obj\n'+body+'\nendobj\n';
+  }
+  put(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  var kids=[];
+  for(var i=0;i<n;i++)kids.push((3+i*3)+' 0 R');
+  put(2,'<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+n+' >>');
+  for(var j=0;j<n;j++){
+    var it=items[j];
+    var scale=Math.min(PW/it.w,PH/it.h);
+    var w=it.w*scale,h=it.h*scale;
+    var ix=((PW-w)/2).toFixed(2),iy=((PH-h)/2).toFixed(2);
+    var content='q '+w.toFixed(2)+' 0 0 '+h.toFixed(2)+' '+ix+' '+iy+' cm /Im0 Do Q';
+    var bin=atob(it.url.split(',')[1]);
+    put(3+j*3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+PH+'] /Resources << /XObject << /Im0 '+(5+j*3)+' 0 R >> >> /Contents '+(4+j*3)+' 0 R >>');
+    put(4+j*3,'<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream');
+    put(5+j*3,'<< /Type /XObject /Subtype /Image /Width '+it.w+' /Height '+it.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+bin.length+' >>\nstream\n'+bin+'\nendstream');
+  }
+  var size=n*3+3;
+  var xref=out.length;
+  out+='xref\n0 '+size+'\n0000000000 65535 f \n';
+  for(var k=1;k<size;k++){
+    out+=String(offsets[k]||0).padStart(10,'0')+' 00000 n \n';
+  }
+  out+='trailer\n<< /Size '+size+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+  var bytes=new Uint8Array(out.length);
+  for(var b=0;b<out.length;b++)bytes[b]=out.charCodeAt(b)&0xFF;
+  return new Blob([bytes],{type:'application/pdf'});
+}
+
+function download(blob,name){
+  var a=document.createElement('a');
+  var url=URL.createObjectURL(blob);
+  a.href=url;a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+}
+
+function loadImg(src){
+  return new Promise(function(res){
+    var img=new Image();
+    img.onload=function(){res(img);};
+    img.onerror=function(){res(null);};
+    img.src=src;
+  });
+}
+
+function wrapText(text,maxW,ctx){
+  var out=[];
+  var CLOSE='，。、；：？！）］｝」』】〉》…—・,.;:!?)]}';
+  var OPEN='（［｛「『【〈《([{';
+  var seg=null;
+  try{if(typeof Intl!=='undefined'&&Intl.Segmenter)seg=new Intl.Segmenter('zh',{granularity:'word'});}catch(e){seg=null;}
+  text.split('\n').forEach(function(para){
+    if(!para){out.push('');return;}
+    var tokens=seg?Array.from(seg.segment(para),function(s){return s.segment;}):para.split('');
+    var line='';
+    tokens.forEach(function(tk){
+      var test=line+tk;
+      if(ctx.measureText(test).width>maxW&&line){
+        var ch=tk.charAt(0);
+        if(CLOSE.indexOf(ch)>=0&&ctx.measureText(line+ch).width<=maxW+60){
+          line+=tk;return;
+        }
+        var push=line.replace(/\s+$/,'');
+        if(push.length>1&&OPEN.indexOf(push.charAt(push.length-1))>=0){
+          line=push.charAt(push.length-1)+tk;
+          push=push.slice(0,-1);
+        }else{
+          line=/^\s/.test(tk)?'':tk;
+        }
+        while(line&&CLOSE.indexOf(line.charAt(0))>=0&&push.length>1){
+          line=push.charAt(push.length-1)+line;
+          push=push.slice(0,-1);
+        }
+        out.push(push);
+        while(ctx.measureText(line).width>maxW&&line.length>1){
+          var k=line.length-1;
+          while(k>1&&ctx.measureText(line.slice(0,k)).width>maxW)k--;
+          out.push(line.slice(0,k));
+          line=line.slice(k);
+        }
+      }else{
+        line=test;
+      }
+    });
+    if(line)out.push(line);
+  });
+  return out;
+}
+
+/* 备忘录 PDF 页面 */
+function memosToPages(items){
+  var PW=1240,PH=1754,M=100,TOP=150,BOT=120;
+  var pages=[],cur=null,y=0;
+  function newPage(){
+    var cv=document.createElement('canvas');
+    cv.width=PW;cv.height=PH;
+    var ctx=cv.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);
+    ctx.textBaseline='top';ctx.textAlign='left';
+    ctx.fillStyle='#8E8E93';ctx.font='500 24px '+FONT;
+    ctx.fillText('与悦书 · 备忘录',M,66);
+    ctx.fillStyle='#E5E5EA';ctx.fillRect(M,102,PW-M*2,1.5);
+    pages.push({cv:cv,ctx:ctx});
+    cur=pages[pages.length-1];
+    y=TOP;
+  }
+  function ensure(h){
+    if(y+h>PH-BOT)newPage();
+  }
+  newPage();
+  var chain=Promise.resolve();
+  var CW=PW-M*2;
+  items.forEach(function(it){
+    chain=chain.then(function(){
+      var d=parseKey(it.date);
+      ensure(74);
+      cur.ctx.fillStyle='#FF3B30';
+      cur.ctx.font='600 36px '+FONT;
+      cur.ctx.fillText(d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()],M,y);
+      y+=54;
+      var mark=store.marks[it.date];
+      if(mark){
+        cur.ctx.fillStyle=MARK_COLOR[mark];
+        cur.ctx.beginPath();cur.ctx.arc(M+9,y+12,9,0,Math.PI*2);cur.ctx.fill();
+        cur.ctx.fillStyle='#8E8E93';
+        cur.ctx.font='500 24px '+FONT;
+        cur.ctx.fillText(MARK_NAME[mark],M+28,y);
+        y+=42;
+      }
+      var text=(it.text||'').trim();
+      cur.ctx.font='400 28px '+FONT;
+      cur.ctx.fillStyle='#1C1C1E';
+      if(text){
+        var lines=wrapText(text,CW,cur.ctx);
+        lines.forEach(function(ln){
+          ensure(46);
+          cur.ctx.font='400 28px '+FONT;
+          cur.ctx.fillStyle='#1C1C1E';
+          cur.ctx.fillText(ln,M,y);
+          y+=46;
+        });
+      }else if(!it.images.length){
+        ensure(40);
+        cur.ctx.fillStyle='#C7C7CC';
+        cur.ctx.font='400 26px '+FONT;
+        cur.ctx.fillText('（无文字内容）',M,y);
+        y+=44;
+      }
+      y+=8;
+      var imgChain=Promise.resolve();
+      it.images.forEach(function(src){
+        imgChain=imgChain.then(function(){
+          return loadImg(src).then(function(img){
+            if(!img)return;
+            var maxW=Math.min(CW,760);
+            var w=maxW,h=w*img.height/img.width;
+            var maxH=700;
+            if(h>maxH){h=maxH;w=h*img.width/img.height;}
+            ensure(h+26);
+            cur.ctx.drawImage(img,M,y,w,h);
+            y+=h+26;
+          });
+        });
+      });
+      return imgChain.then(function(){
+        ensure(40);
+        cur.ctx.fillStyle='#E5E5EA';
+        cur.ctx.fillRect(M,y,CW,1);
+        y+=36;
+      });
+    });
+  });
+  return chain.then(function(){
+    pages.forEach(function(p,i){
+      p.ctx.fillStyle='#C7C7CC';
+      p.ctx.font='400 22px '+FONT;
+      p.ctx.textAlign='center';
+      p.ctx.fillText('第 '+(i+1)+' / '+pages.length+' 页',PW/2,PH-70);
+      p.ctx.textAlign='left';
+    });
+    return pages;
+  });
+}
+
+/* 月经趋势页 */
+function periodPageCanvas(){
+  var PW=1240,PH=1754,M=90;
+  var cv=document.createElement('canvas');
+  cv.width=PW;cv.height=PH;
+  var ctx=cv.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);
+  ctx.textBaseline='top';ctx.textAlign='left';
+  var st=periodStats();
+
+  ctx.fillStyle='#8E8E93';ctx.font='500 24px '+FONT;
+  ctx.fillText('与悦书 · 月经记录趋势',M,64);
+  ctx.fillStyle='#FF2D55';ctx.font='600 42px '+FONT;
+  ctx.fillText('周期趋势',M,106);
+  ctx.fillStyle='#1C1C1E';ctx.font='400 26px '+FONT;
+  ctx.fillText('共 '+st.recs.length+' 轮 · 平均间隔 '+st.avgInt+' 天 · 平均经期 '+st.avgLen+' 天 · 痛经 '+st.pain+' 次',M,168);
+
+  drawChart(ctx,M,206,PW-M*2,540,2.2);
+
+  var y=790;
+  ctx.fillStyle='#1C1C1E';ctx.font='600 28px '+FONT;
+  ctx.fillText('记录明细',M,y);y+=44;
+  var cols=[M,M+300,M+500,M+660];
+  ctx.fillStyle='#8E8E93';ctx.font='500 24px '+FONT;
+  ['开始日期','经期天数','是否痛经','与上次间隔'].forEach(function(t,i){ctx.fillText(t,cols[i],y);});
+  y+=34;
+  ctx.fillStyle='#E5E5EA';ctx.fillRect(M,y-12,PW-M*2,1);
+  var asc=sortPeriods();
+  for(var i=asc.length-1;i>=0;i--){
+    if(y>PH-110)break;
+    var r=asc[i];
+    ctx.fillStyle='#1C1C1E';ctx.font='400 25px '+FONT;
+    ctx.fillText(r.start,cols[0],y);
+    ctx.fillText((+r.days)+' 天',cols[1],y);
+    ctx.fillStyle=r.pain?'#FF3B30':'#8E8E93';
+    ctx.fillText(r.pain?'痛经':'无',cols[2],y);
+    ctx.fillStyle='#1C1C1E';
+    ctx.fillText(i>0?dayDiff(asc[i-1].start,r.start)+' 天':'—',cols[3],y);
+    y+=38;
+  }
+  ctx.fillStyle='#C7C7CC';ctx.font='400 22px '+FONT;ctx.textAlign='center';
+  ctx.fillText('与悦书 · 生成于 '+nowText(),PW/2,PH-70);
+  return cv;
+}
+
+/* ========== 导出 ========== */
+var expTab='memo',expSel=new Set(),allMemoKeys=[];
+function openExport(tab){
+  expTab=tab||'memo';
+  allMemoKeys=Object.keys(store.memos).filter(function(k){
+    var m=store.memos[k];return m&&((m.text&&m.text.trim())||(m.images||[]).length);
+  }).sort().reverse();
+  expSel=new Set(allMemoKeys);
+  openSheet('<div class="sheet-head"><span class="sh-title">导出</span><button class="txt-btn strong" data-act="close">完成</button></div>'
+    +'<div class="seg2"><span class="thumb2" id="expThumb"></span>'
+      +'<button data-act="exp-tab" data-tab="memo">备忘录</button>'
+      +'<button data-act="exp-tab" data-tab="period">月经趋势</button></div>'
+    +'<div class="expBody" id="expBody"></div>',{cls:'tall'});
+  renderExpBody();
+}
+function updateExpThumb(){
+  var th=document.getElementById('expThumb');
+  if(!th)return;
+  th.style.left=expTab==='memo'?'2px':'calc(2px + (100% - 4px)/2)';
+  document.querySelectorAll('.seg2 button').forEach(function(b){
+    b.classList.toggle('on',b.dataset.tab===expTab);
+  });
+}
+function renderExpBody(){
+  var box=document.getElementById('expBody');
+  if(!box)return;
+  updateExpThumb();
+  if(expTab==='memo'){
+    if(!allMemoKeys.length){
+      box.innerHTML='<div class="expNote">还没有备忘录，先回到日历写一条吧。</div>';
+      return;
+    }
+    var rows=allMemoKeys.map(function(ds){
+      var m=store.memos[ds];
+      var t=(m.text||'').replace(/\s+/g,' ').trim().slice(0,30)||'（图片备忘）';
+      return '<button class="exp-row'+(expSel.has(ds)?' on':'')+'" data-act="exp-toggle" data-date="'+ds+'">'
+        +'<span class="cbox">✓</span><span class="edate">'+ds.slice(5).replace('-','/')+'</span>'
+        +'<span class="etext">'+esc(t)+'</span></button>';
+    }).join('');
+    box.innerHTML='<div class="expBar"><button data-act="exp-all">全选 / 全不选</button>'
+      +'<span id="expCount">已选 '+expSel.size+' / '+allMemoKeys.length+'</span></div>'
+      +'<div class="expList">'+rows+'</div>'
+      +'<div class="expActions"><button data-act="exp-memo" data-fmt="pdf">导出 PDF</button>'
+      +'<button data-act="exp-memo" data-fmt="doc" class="alt">导出 DOC</button></div>';
+  }else{
+    var st=periodStats();
+    box.innerHTML='<div class="expNote">'
+      +(st.recs.length
+        ?'共 '+st.recs.length+' 轮记录 · 平均间隔 '+st.avgInt+' 天 · 平均经期 '+st.avgLen+' 天 · 痛经 '+st.pain+' 次'
+        :'还没有月经记录，先在日历里记录一轮，就能生成趋势图。')
+      +'</div>'
+      +'<div class="chartBox"><canvas id="chartPrev" width="750" height="400"></canvas></div>'
+      +'<div class="expList small">'+st.recs.slice().reverse().map(function(r){
+          return '<div class="exp-row" style="border-bottom:1px solid var(--sep)">'
+            +'<span class="edate">'+r.start.slice(5).replace('-','/')+'</span>'
+            +'<span class="etext">'+r.days+' 天'+(r.pain?' · 痛经':'')+'</span></div>';
+        }).join('')+'</div>'
+      +'<div class="expActions"><button data-act="exp-period" data-fmt="pdf">导出 PDF</button>'
+      +'<button data-act="exp-period" data-fmt="doc" class="alt">导出 DOC</button></div>';
+    var cv=document.getElementById('chartPrev');
+    if(cv)drawChart(cv.getContext('2d'),0,0,cv.width,cv.height,2);
+  }
+}
+function updateExpCount(){
+  var el=document.getElementById('expCount');
+  if(el)el.textContent='已选 '+expSel.size+' / '+allMemoKeys.length;
+}
+
+function memoDoc(items){
+  var body='<h1>与悦书 · 备忘录</h1><p class="sub">导出时间：'+nowText()+' · 共 '+items.length+' 条</p>';
+  items.forEach(function(it){
+    var d=parseKey(it.date);
+    body+='<h2>'+d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日　'+WD[d.getDay()]+'</h2>';
+    if(it.text)body+='<p class="memo">'+esc(it.text).replace(/\n/g,'<br>')+'</p>';
+    it.images.forEach(function(src){body+='<p><img src="'+src+'" style="width:360px"></p>';});
+  });
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'
+    +'<title>与悦书-备忘录</title>'
+    +'<style>@page{size:A4;margin:2.2cm}body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#111;font-size:12pt;line-height:1.8}'
+    +'h1{font-size:20pt;margin:0 0 2pt}h2{font-size:13.5pt;color:#B03A2E;margin:20pt 0 6pt}p{margin:0 0 9pt}.sub{color:#888;font-size:9pt}</style>'
+    +'</head><body>'+body+'</body></html>';
+  download(new Blob(['\ufeff'+html],{type:'application/msword'}),'与悦书-备忘录-'+stamp()+'.doc');
+}
+
+function periodDoc(){
+  var st=periodStats();
+  var cv=periodPageCanvas();
+  var img=cv.toDataURL('image/jpeg',0.85);
+  var rows=st.recs.slice().reverse().map(function(r){
+    return '<tr><td>'+r.start+'</td><td>'+r.days+' 天</td><td>'+(r.pain?'痛经':'无')+'</td></tr>';
+  }).join('');
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'
+    +'<title>与悦书-月经趋势</title>'
+    +'<style>@page{size:A4;margin:1.8cm}body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#111;font-size:12pt}'
+    +'h1{font-size:18pt}table{border-collapse:collapse;width:100%;font-size:10.5pt}td,th{border:1px solid #ddd;padding:5pt 7pt;text-align:left}</style>'
+    +'</head><body><h1>与悦书 · 月经记录趋势</h1>'
+    +'<p>共 '+st.recs.length+' 轮 · 平均间隔 '+st.avgInt+' 天 · 平均经期 '+st.avgLen+' 天 · 痛经 '+st.pain+' 次</p>'
+    +'<p><img src="'+img+'" style="width:620px"></p>'
+    +'<table><tr><th>开始日期</th><th>经期天数</th><th>是否痛经</th></tr>'+rows+'</table>'
+    +'</body></html>';
+  download(new Blob(['\ufeff'+html],{type:'application/msword'}),'与悦书-月经趋势-'+stamp()+'.doc');
+}
+
+function exportMemos(fmt){
+  var items=allMemoKeys.filter(function(d){return expSel.has(d);}).sort().map(function(ds){
+    var m=store.memos[ds];
+    return {date:ds,text:m.text||'',images:(m.images||[]).slice()};
+  });
+  if(!items.length){toast('请先勾选要导出的备忘录');return;}
+  if(fmt==='doc'){memoDoc(items);toast('已导出 DOC');return;}
+  toast('正在生成 PDF…');
+  memosToPages(items).then(function(pages){
+    var canvasList=pages.map(function(p){return p.cv;});
+    var pdf=pdfFromCanvases(canvasList);
+    download(pdf,'与悦书-备忘录-'+stamp()+'.pdf');
+    toast('已导出 PDF，共 '+pages.length+' 页');
+  }).catch(function(e){
+    console.error(e);
+    toast('PDF 生成失败，请重试');
+  });
+}
+function exportPeriod(fmt){
+  var st=periodStats();
+  if(!st.recs.length){toast('还没有月经记录');return;}
+  if(fmt==='doc'){periodDoc();toast('已导出 DOC');return;}
+  var cv=periodPageCanvas();
+  var pdf=pdfFromCanvases([cv]);
+  download(pdf,'与悦书-月经趋势-'+stamp()+'.pdf');
+  toast('已导出 PDF');
+}
+function exportOne(ds,fmt){
+  var m=store.memos[ds];
+  if(!m)return;
+  var items=[{date:ds,text:m.text||'',images:(m.images||[]).slice()}];
+  if(fmt==='doc'){memoDoc(items);toast('已导出 DOC');return;}
+  toast('正在生成 PDF…');
+  memosToPages(items).then(function(pages){
+    var pdf=pdfFromCanvases(pages.map(function(p){return p.cv;}));
+    download(pdf,'与悦书-备忘-'+ds+'.pdf');
+    toast('已导出 PDF');
+  });
+}
+
+/* ========== 设置 ========== */
+function openSettings(){
+  var st=periodStats();
+  openSheet('<div class="sheet-head"><span class="sh-title">设置</span><button class="txt-btn strong" data-act="close">完成</button></div>'
+    +'<div class="setBody">'
+      +'<div class="setGroup">'
+        +'<div class="setRow"><span>月经提醒</span><div class="switch'+(store.settings.reminder?' on':'')+'" data-act="set-reminder" id="swReminder"></div></div>'
+        +'<div class="setRow"><span>默认经期天数</span><div class="stepper"><button data-act="set-len" data-d="-1">−</button><b id="setLen">'+store.settings.len+'</b><button data-act="set-len" data-d="1">＋</button></div></div>'
+      +'</div>'
+      +'<div class="setGroup">'
+        +'<div class="setRow"><span>平均间隔</span><b class="val">'+(st.recs.length>1?st.avgInt+' 天':'待记录')+'</b></div>'
+        +'<div class="setRow"><span>下次预计</span><b class="val">'+(st.next||'—')+'</b></div>'
+        +'<div class="setRow"><span>已记录轮次</span><b class="val">'+st.recs.length+'</b></div>'
+      +'</div>'
+      +'<div class="setGroup">'
+        +'<button class="setRow link" data-act="backup">备份数据（.json）</button>'
+        +'<button class="setRow link" data-act="restore">从备份恢复</button>'
+      +'</div>'
+      +'<div class="note">颜色约定：未来日＝绿色，纪念日＝红色，重要日＝黄色（对应 macOS 系统红黄绿）。<br>'
+        +'未来日仅可标注今天及之后的日期；到期当天会弹出提醒，之后自动变为绿色对勾。<br>'
+        +'节假日数据：国务院办公厅 2025–2027 年放假安排，离线内置。<br>'
+        +'所有数据只保存在本机浏览器，不联网、不上传。</div>'
+    +'</div>'
+    +'<input type="file" id="jsonPicker" accept="application/json,.json" style="display:none">',{cls:'tall'});
+  var picker=document.getElementById('jsonPicker');
+  if(picker)picker.onchange=function(e){
+    var f=e.target.files&&e.target.files[0];
+    if(!f)return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{
+        var data=JSON.parse(rd.result);
+        if(!data||typeof data!=='object'||!data.memos)throw new Error('bad');
+        store=data;
+        store.memos=store.memos||{};store.marks=store.marks||{};store.periods=store.periods||[];
+        store.settings=Object.assign({reminder:true,len:5,cycle:28,seen:{}},store.settings||{});
+        saveStore();refreshDerived();render(0);closeSheet();toast('已恢复备份');
+      }catch(err){toast('备份文件格式不正确');}
+    };
+    rd.readAsText(f);
+  };
+}
+
+/* ========== 提醒弹窗 ========== */
+function showAlert(a,cb){
+  var wrap=document.createElement('div');
+  wrap.className='alert-wrap';
+  wrap.innerHTML='<div class="alert-backdrop"></div><div class="alert">'
+    +'<div class="alert-ico" style="background:'+a.accent+'1f;color:'+a.accent+'">'
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      +(a.accent==='#FF2D55'?'<path d="M12 20s-7-4.6-7-9.4A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7 3.6C19 15.4 12 20 12 20z"/>':'<path d="M12 3a6 6 0 0 0-6 6c0 4 3 6 4 9h4c1-3 4-5 4-9a6 6 0 0 0-6-6z"/><path d="M9.5 21h5"/>')
+      +'</svg></div>'
+    +'<div class="alert-t">'+esc(a.title)+'</div>'
+    +'<div class="alert-b">'+esc(a.body).replace(/\n/g,'<br>')+'</div>'
+    +'<button class="alert-btn" style="color:'+a.accent+'">'+esc(a.btn)+'</button></div>';
+  document.body.appendChild(wrap);
+  requestAnimationFrame(function(){
+    wrap.querySelector('.alert').classList.add('in');
+    wrap.querySelector('.alert-backdrop').style.background='rgba(0,0,0,.32)';
+  });
+  var closed=false;
+  function done(){
+    if(closed)return;closed=true;
+    wrap.querySelector('.alert').classList.remove('in');
+    setTimeout(function(){wrap.remove();if(cb)cb();},260);
+  }
+  wrap.querySelector('.alert-btn').onclick=done;
+  wrap.querySelector('.alert-backdrop').onclick=done;
+}
+function runAlerts(list){
+  function next(){
+    var a=list.shift();
+    if(a)setTimeout(function(){showAlert(a,next);},200);
+  }
+  next();
+}
+function buildAlerts(){
+  var q=[];
+  var seen=store.settings.seen=store.settings.seen||{};
+  if(store.marks[TODAY]==='future'&&seen.future!==TODAY){
+    var memo=store.memos[TODAY];
+    q.push({
+      accent:'#34C759',
+      title:'今天是你标记的未来日',
+      body:fmtDate(TODAY)+(memo&&memo.text?'\n'+memo.text.slice(0,80):'\n就是今天，愿一切顺利。'),
+      btn:'知道了'
+    });
+    seen.future=TODAY;
+  }
+  if(store.settings.reminder){
+    var st=periodStats();
+    if(st.next&&seen.period!==TODAY){
+      var left=dayDiff(TODAY,st.next);
+      if(left<=3){
+        q.push({
+          accent:'#FF2D55',
+          title:'月经提醒',
+          body:'预计'+(left===0?'今天':left+' 天后')+'（'+st.next.replace(/-/g,'/')+'）开始新一轮，记得提前准备。',
+          btn:'好的'
+        });
+        seen.period=TODAY;
+      }
+    }
+  }
+  if(q.length)saveStore();
+  return q;
+}
+
+/* ========== Toast ========== */
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('in');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('in');},2000);
+}
+
+/* ========== 交互 ========== */
+function onPick(ds,other){
+  if(other){
+    S.cursor=ds;S.view='month';render(0);
+    return;
+  }
+  S.cursor=ds;S.sel=ds;
+  render(0);
+  openDaySheet(ds);
+}
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');
+  if(!el)return;
+  var act=el.dataset.act;
+  var inSheet=!!sheetEl;
+  switch(act){
+    case 'view':setView(el.dataset.view);break;
+    case 'today':goToday();break;
+    case 'export':openExport(el.dataset.tab||'memo');break;
+    case 'settings':openSettings();break;
+    case 'pick':onPick(el.dataset.date,el.dataset.other);break;
+    case 'mini-month':S.cursor=el.dataset.y+'-'+pad(+el.dataset.m)+'-01';S.view='month';render(0);break;
+    case 'mark':toggleMark(el.dataset.date,el.dataset.mark);break;
+    case 'memo':openMemo(el.dataset.date,inSheet?'sheet':null);break;
+    case 'period':openPeriod(el.dataset.date,inSheet?'sheet':null);break;
+    case 'period-export':openExport('period');break;
+    case 'close':closeSheet();break;
+    case 'memo-cancel':memoDraft=null;closeSheet();break;
+    case 'memo-save':saveMemo();break;
+    case 'memo-img':{var pk=document.getElementById('imgPicker');if(pk)pk.click();break;}
+    case 'memo-delimg':{
+      if(memoDraft){memoDraft.images.splice(+el.dataset.i,1);renderMemoImgs();}
+      break;
+    }
+    case 'memo-del':{
+      if(memoDraft){
+        var ds=memoDraft.ds;
+        delete store.memos[ds];
+        saveStore();
+        memoDraft=null;
+        closeSheet();
+        refreshDerived();render(0);
+        toast('已删除该备忘录');
+      }
+      break;
+    }
+    case 'memo-export':{
+      if(!memoDraft)break;
+      var ds2=memoDraft.ds;
+      stashMemo();
+      openSheet('<div class="sheet-head"><span class="sh-title">导出本篇</span><button class="txt-btn" data-act="close">取消</button></div>'
+        +'<div class="expList" style="padding:10px 12px 20px">'
+        +'<button class="exp-row" data-act="exp-one" data-fmt="pdf" data-date="'+ds2+'"><span class="etext" style="color:var(--blue);font-weight:600">导出为 PDF</span></button>'
+        +'<button class="exp-row" data-act="exp-one" data-fmt="doc" data-date="'+ds2+'"><span class="etext" style="color:var(--blue);font-weight:600">导出为 Word（.doc）</span></button>'
+        +'</div>');
+      break;
+    }
+    case 'exp-one':exportOne(el.dataset.date,el.dataset.fmt);break;
+    case 'p-days':{
+      if(periodDraft){
+        periodDraft.days=Math.max(1,Math.min(15,periodDraft.days+(+el.dataset.d)));
+        refreshPeriodForm();
+      }
+      break;
+    }
+    case 'p-pain':{
+      if(periodDraft){periodDraft.pain=!periodDraft.pain;refreshPeriodForm();}
+      break;
+    }
+    case 'p-save':savePeriod();break;
+    case 'exp-tab':expTab=el.dataset.tab;renderExpBody();break;
+    case 'exp-toggle':{
+      var d3=el.dataset.date;
+      if(expSel.has(d3))expSel.delete(d3);else expSel.add(d3);
+      el.classList.toggle('on');
+      updateExpCount();
+      break;
+    }
+    case 'exp-all':{
+      expSel=(expSel.size<allMemoKeys.length)?new Set(allMemoKeys):new Set();
+      renderExpBody();
+      break;
+    }
+    case 'exp-memo':exportMemos(el.dataset.fmt);break;
+    case 'exp-period':exportPeriod(el.dataset.fmt);break;
+    case 'set-reminder':{
+      store.settings.reminder=!store.settings.reminder;
+      saveStore();
+      el.classList.toggle('on',store.settings.reminder);
+      break;
+    }
+    case 'set-len':{
+      store.settings.len=Math.max(1,Math.min(15,store.settings.len+(+el.dataset.d)));
+      saveStore();
+      var b=document.getElementById('setLen');
+      if(b)b.textContent=store.settings.len;
+      break;
+    }
+    case 'backup':{
+      var data=JSON.stringify(store,null,2);
+      download(new Blob([data],{type:'application/json'}),'与悦书备份-'+stamp()+'.json');
+      break;
+    }
+    case 'restore':{var jp=document.getElementById('jsonPicker');if(jp)jp.click();break;}
+  }
+});
+
+/* 手势 */
+var dragX=0,dragY=0,dragging=false,swiping=false,suppressClick=false;
+host.addEventListener('pointerdown',function(e){
+  if(e.target.closest('textarea,input'))return;
+  dragX=e.clientX;dragY=e.clientY;dragging=true;swiping=false;
+},{passive:true});
+host.addEventListener('pointermove',function(e){
+  if(!dragging)return;
+  var dx=e.clientX-dragX,dy=e.clientY-dragY;
+  if(!swiping&&Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.4){
+    swiping=true;
+    var p0=host.querySelector('.page');
+    if(p0)p0.style.transition='none';
+  }
+  if(swiping){
+    var p=host.querySelector('.page');
+    if(p)p.style.transform='translateX('+(dx*0.42)+'px)';
+    if(e.cancelable)e.preventDefault();
+  }
+},{passive:false});
+host.addEventListener('pointerup',function(e){
+  if(!dragging)return;
+  dragging=false;
+  var dx=e.clientX-dragX;
+  var p=host.querySelector('.page');
+  if(swiping&&Math.abs(dx)>58){
+    suppressClick=true;
+    if(p){p.style.transition='';p.style.transform='';}
+    shift(dx<0?1:-1);
+  }else if(p){
+    p.style.transition='';
+    p.style.transform='';
+  }
+  swiping=false;
+  setTimeout(function(){suppressClick=false;},400);
+});
+host.addEventListener('pointercancel',function(){
+  dragging=false;swiping=false;
+  var p=host.querySelector('.page');
+  if(p){p.style.transition='';p.style.transform='';}
+});
+document.addEventListener('click',function(e){
+  if(suppressClick){e.stopPropagation();e.preventDefault();}
+},true);
+
+document.addEventListener('keydown',function(e){
+  if(sheetEl)return;
+  if(e.key==='ArrowLeft')shift(-1);
+  if(e.key==='ArrowRight')shift(1);
+});
+
+/* ========== 启动 ========== */
+function init(){
+  loadStore();
+  refreshDerived();
+  render(0);
+  if(!storageOK){
+    setTimeout(function(){toast('当前浏览器禁止本地存储，数据仅本次有效');},900);
+  }
+  var alerts=buildAlerts();
+  if(alerts.length)setTimeout(function(){runAlerts(alerts);},600);
+  window.addEventListener('resize',function(){
+    if(!sheetEl)render(0);
+  });
+}
+init();
+})();
+</script>
+<script>if(navigator.serviceWorker){navigator.serviceWorker.register("sw.js").catch(function(){});}</script>
+</body>
+</html>
