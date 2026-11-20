@@ -1,0 +1,16 @@
+{
+  "name": "与悦书",
+  "short_name": "与悦书",
+  "description": "iOS 风格的本地离线日历：备忘录、纪念日、月经记录与趋势图。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#F2F2F7",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
